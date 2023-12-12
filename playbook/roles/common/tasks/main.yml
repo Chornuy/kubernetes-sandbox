@@ -1,0 +1,13 @@
+---
+
+- name: register debug varible os
+  debug:
+    var: ansible_facts['os_family']|lower
+
+- name: ansible_distribution debug
+  debug:
+    var: ansible_distribution|lower
+
+- name: start common role for ubuntu
+  import_tasks: ubuntu.yml
+  when: ansible_distribution|lower == 'ubuntu'

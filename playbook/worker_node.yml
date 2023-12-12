@@ -1,0 +1,8 @@
+  - hosts: worker-node01
+    roles:
+    - common
+    # - docker
+    - hosts-managmanet
+    - crio-setup
+    - kubernetes-setup
+    - kubernetes-node

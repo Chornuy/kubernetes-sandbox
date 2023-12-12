@@ -1,0 +1,9 @@
+- name: "Build hosts file"
+  lineinfile: 
+    dest: /etc/hosts 
+    regexp: '.*{{ item.ip_address }} {{ item.host_name }}$' 
+    line: "{{ item.ip_address }} {{item.host_name}}"
+    state: present
+  when: server_hosts is defined
+  with_items: "{{ server_hosts }}"
+  become: true

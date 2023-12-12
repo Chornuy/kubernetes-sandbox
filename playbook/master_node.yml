@@ -1,0 +1,9 @@
+  - hosts: master-node
+    roles:
+    - common
+    # - docker
+    - hosts-managmanet
+    - crio-setup
+    - kubernetes-setup
+    - kubernetes-master
+    - kubernetes-export-local

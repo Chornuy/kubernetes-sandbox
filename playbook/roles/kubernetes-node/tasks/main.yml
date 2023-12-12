@@ -1,0 +1,21 @@
+---
+- name: Copy join command from Ansiblehost to the worker nodes.
+  become: yes
+  copy:
+    src: kubernetes_join_command.sh
+    dest: /usr/local/bin/kubernetes_join_command.sh
+    mode: 0777
+
+- name: Join the Worker nodes to the cluster.
+  become: yes
+  command: sh /usr/local/bin/kubernetes_join_command.sh
+  register: joined_or_not
+
+- name: Add join command autostart script to cron
+  cron:
+    name: "join-kuber"
+    special_time: reboot
+    user: vagrant
+    state: present
+    job: /usr/local/bin/kubernetes_join_command.sh
+  become: true

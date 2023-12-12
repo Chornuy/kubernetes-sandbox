@@ -1,0 +1,24 @@
+
+# Docker and docker compose
+docker
+docker-compose
+
+# Dive util for inpecting a docker images
+dive
+
+# Ansible 
+ansible
+
+# Kubernetes
+kubectl
+kubeadm
+
+# Helm charts
+helm
+
+# Virtual Box for vargrant
+linux66-virtualbox-host-modules
+virtualbox
+
+# Vagrant
+vagrant

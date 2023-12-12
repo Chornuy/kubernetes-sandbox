@@ -1,0 +1,60 @@
+# - name: Upgrade all packages
+#   apt:
+#     name: '*'
+#     state: latest
+
+# - name: Install git
+#   apt:
+#     name: git
+#     state: present
+#     update_cache: yes
+
+# - name: Install wget
+#   apt:
+#     name: wget
+#     state: present
+
+# - name: Install curl
+#   apt:
+#     name: curl
+#     state: present
+
+# - name: Install htop
+#   apt:
+#     name: htop
+#     state: present
+
+# - name: Install mc
+#   apt:
+#     name: mc
+#     state: present
+
+# - name: Install net-tools
+#   apt:
+#     name: net-tools
+#     state: present
+
+# - name: Install ca-certificates
+#   apt:
+#     name: ca-certificates
+#     state: present
+
+
+- name: Install required system packages
+  apt:
+    pkg:
+      - git
+      - apt-transport-https
+      - wget
+      - ca-certificates
+      - curl
+      - software-properties-common
+      - net-tools
+      - gnupg2
+      # for debug only
+      - htop
+      - mc
+    state: latest
+    update_cache: true
+  become: true
+

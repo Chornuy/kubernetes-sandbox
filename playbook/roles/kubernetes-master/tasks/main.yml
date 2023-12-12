@@ -1,0 +1,75 @@
+---
+- name: Check if kubeadm was already inited
+  stat:
+    path: /etc/kubernetes/manifests/kube-controller-manager.yaml already
+  register: kubeadm_init
+
+- name: Initialize the Kubernetes cluster using kubeadm
+  command: kubeadm init --apiserver-advertise-address="{{ kubernetes_node_ip }}" --apiserver-cert-extra-sans="{{ kubernetes_node_ip }}"  --node-name {{kubernetes_node_name}} --pod-network-cidr={{ kubernates_pod_network_cidr }}  --ignore-preflight-errors Swap
+  become: true
+  when: kubeadm_init
+
+- name: kubeadm config images pull
+  command: kubeadm config images pull
+  become: true
+  when: kubeadm_init
+
+- name: Setup kubeconfig for vagrant user
+  command: "{{ item }}"
+  with_items:
+    - mkdir -p /home/vagrant/.kube
+    - cp -i /etc/kubernetes/admin.conf /home/vagrant/.kube/config
+    - chown vagrant:vagrant /home/vagrant/.kube/config
+  become: true
+  when: kubeadm_init
+
+- name: Create join script
+  command: "{{ item }}"
+  with_items:
+    - touch /usr/local/bin/kubernetes_join_command.sh
+    - chmod +x /usr/local/bin/kubernetes_join_command.sh
+  become: true
+  when: kubeadm_init
+
+- name: Generate join token
+  shell: kubeadm token create --print-join-command
+  register: kubeadm_join_cmd
+  become: true
+  when: kubeadm_init
+
+- set_fact:
+    kubeadm_join: "{{ kubeadm_join_cmd.stdout }}"
+  when: kubeadm_init
+
+- name: Store join command
+  copy:
+    content: "{{ kubeadm_join }}"
+    dest: "/usr/local/bin/kubernetes_join_command.sh"
+  become: true
+  when: kubeadm_init
+
+- name: Restart kubelet
+  service:
+    name: kubelet
+    daemon_reload: yes
+    state: restarted
+  become: true
+  when: kubeadm_init
+
+- name: Intall calio plugin
+  command: kubectl apply -f https://raw.githubusercontent.com/projectcalico/calico/v3.26.0/manifests/calico.yaml
+  when: not kubeadm_init
+  
+- name: Install Metrics Server
+  command: kubectl apply -f https://raw.githubusercontent.com/techiescamp/kubeadm-scripts/main/manifests/metrics-server.yaml
+  when: kubeadm_init
+
+- name: Add join command autostart script to cron
+  cron:
+    name: "join-kuber"
+    special_time: reboot
+    user: vagrant
+    state: present
+    job: /usr/local/bin/kubernetes_join_command.sh
+  when: kubeadm_init
+  become: true

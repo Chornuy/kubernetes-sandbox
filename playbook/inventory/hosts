@@ -1,0 +1,6 @@
+# hosts file
+[master-node]
+10.0.0.10
+
+[worker-node-01]
+10.0.0.11

@@ -1,0 +1,92 @@
+---
+- name: Remove swapfile from /etc/fstab
+  mount:
+      name: "{{ item }}"
+      fstype: swap
+      state: absent
+  with_items:
+    - swap
+    - none
+  become: true
+
+- name: Disable swap
+  command: swapoff -a
+  when: ansible_swaptotal_mb > 0
+  become: true
+
+- name: Disable SWAP in fstab
+  replace:
+    path: /etc/fstab
+    regexp: '^([^#].*?\sswap\s+sw\s+.*)$'
+    replace: '# \1'
+  become: true
+
+- name: Add overlay 
+  modprobe:
+    name: overlay
+    state: present
+    persistent: present
+  become: true
+
+- name: Add br_netfilter 
+  modprobe:
+    name: br_netfilter
+    state: present
+    persistent: present
+  become: true
+
+- name: Set ip forward | systemctl
+  become: yes
+  sysctl:
+    name: net.ipv4.ip_forward
+    value: 1
+    sysctl_set: yes
+    state: present
+    reload: yes
+
+- name: Set bridge iptables ipv4 | systemctl
+  become: yes
+  sysctl:
+    name: net.bridge.bridge-nf-call-iptables
+    value: 1
+    sysctl_set: yes
+    state: present
+    reload: yes
+
+- name: Set bridge iptables ipv6 | systemctl
+  become: yes
+  sysctl:
+    name: net.bridge.bridge-nf-call-ip6tables
+    value: 1
+    sysctl_set: yes
+    state: present
+    reload: yes
+
+- name: Add Kuberanetes apt-repository
+  ansible.builtin.apt_repository:
+    filename: kubernetes
+    repo: "{{ lookup('ansible.builtin.template', 'kubernetes.list.j2') }}"
+    state: present
+    update_cache: true
+  become: true
+
+- name: Install Kubernetes binaries
+  ansible.builtin.apt:
+    pkg:
+      - kubelet
+      - kubeadm
+      - kubectl
+    state: present
+    update_cache: true
+  become: true
+
+- name: ansible_distribution debug
+  debug:
+    var: hostvars[inventory_hostname]['ansible_default_ipv4']['address']
+
+- name: Configure node ip
+  lineinfile:
+    path: /etc/default/kubelet
+    line: KUBELET_EXTRA_ARGS=--node-ip={{ kubernetes_node_ip }}
+    create: yes
+  become: true

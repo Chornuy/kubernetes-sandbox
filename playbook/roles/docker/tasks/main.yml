@@ -1,0 +1,30 @@
+---
+
+- name: Add Docker apt-key
+  ansible.builtin.get_url:
+    url: https://download.docker.com/linux/ubuntu/gpg
+    dest: /usr/share/keyrings/docker.asc
+    mode: "0644"
+  become: true
+
+- name: Add Docker apt-repository
+  ansible.builtin.apt_repository:
+    filename: docker
+    repo: "{{ lookup('ansible.builtin.template', 'docker.list.j2') }}"
+    state: present
+    update_cache: true
+  become: true
+
+- name: Ensure Docker is installed
+  ansible.builtin.apt:
+    pkg:
+      - docker-ce
+      - docker-ce-cli
+      # - containerd.io
+      - docker-buildx-plugin
+      - docker-compose-plugin
+    state: present
+    update_cache: true
+  become: true
+  notify:
+    - Restart containerd

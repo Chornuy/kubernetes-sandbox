@@ -1,0 +1,71 @@
+- name: Create the .conf file to load the modules at bootup
+  template:
+    src: crio.conf.j2
+    dest: /etc/modules-load.d/crio.conf
+    backup: true
+  become: true
+
+- name: Add the GPG key for Clear Containers repository key (Ubuntu)
+  shell: 'curl -fsSL https://download.opensuse.org/repositories/devel:/kubic:/libcontainers:/stable/xUbuntu_{{ ansible_lsb.release }}/Release.key | gpg --batch --yes --dearmor -o /usr/share/keyrings/libcontainers-archive-keyring.gpg'
+  become: true
+
+- name: Add the GPG key for Crio repository key (Ubuntu)
+  shell: 'curl -fsSL https://download.opensuse.org/repositories/devel:/kubic:/libcontainers:/stable:/cri-o:/{{ crio_vesrion }}/xUbuntu_{{ ansible_lsb.release }}/Release.key | sudo gpg --batch --yes --dearmor -o /usr/share/keyrings/libcontainers-crio-archive-keyring.gpg'
+  become: true
+
+- name: Add libcontainers Crio apt-repository
+  ansible.builtin.apt_repository:
+    filename: "devel:kubic:libcontainers:stable"
+    repo: "{{ lookup('ansible.builtin.template', 'devel:kubic:libcontainers:stable.list.j2') }}"
+    state: present
+    update_cache: true
+  become: true
+
+
+- name: Add Crio apt-repository
+  ansible.builtin.apt_repository:
+    filename: "devel:kubic:libcontainers:stable:cri-o:{{ crio_vesrion }}"
+    repo: "{{ lookup('ansible.builtin.template', 'devel:kubic:libcontainers:stable:cri-o.list.j2') }}"
+    state: present
+    update_cache: true
+  become: true
+
+
+- name: Add an apt signing key for Crio
+  ansible.builtin.get_url:
+    url: https://pkgs.k8s.io/core:/stable:/v1.28/deb/Release.key
+    dest: /usr/share/keyrings/kubernetes-apt-keyring.asc
+    mode: "0644"
+  become: true
+
+
+- name: Install crio binaries
+  ansible.builtin.apt:
+    pkg:
+      - cri-o
+      - cri-o-runc
+    state: present
+    update_cache: true
+  become: true
+
+- name: Enable service crio
+  ansible.builtin.systemd_service:
+    name: crio
+    state: started
+    enabled: true
+  become: true
+
+- name: Create the .conf file to load the modules at bootup
+  template:
+    src: crio.conf.j2
+    dest: /etc/modules-load.d/crio.conf
+    backup: true
+  become: true
+
+
+- name: Systemctl kubernates setup
+  template:
+    src: 99-kubernetes-cri.conf.j2
+    dest: /etc/sysctl.d/99-kubernetes-cri.conf
+    backup: true
+  become: true

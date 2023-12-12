@@ -1,0 +1,30 @@
+---
+
+- name: Copy webserver key file into memory
+  become: true
+  ansible.builtin.slurp:
+    src: "/etc/kubernetes/admin.conf"
+  register: kubernetes_admin_conf
+
+
+- name: Copy join command to local file.
+  delegate_to: localhost
+  copy:
+    content: "{{ kubernetes_admin_conf.content | b64decode }}"
+    dest: "./config"
+    mode: 0777
+
+
+- name: Copy kubernetes creds
+  become: true
+  ansible.builtin.slurp:
+    src: "/usr/local/bin/kubernetes_join_command.sh"
+  register: kubernetes_join_command
+
+
+- name: Write localy join command to local file.
+  delegate_to: localhost
+  copy:
+    content: "{{ kubernetes_join_command.content | b64decode }}"
+    dest: "./kubernetes_join_command.sh"
+    mode: 0777
