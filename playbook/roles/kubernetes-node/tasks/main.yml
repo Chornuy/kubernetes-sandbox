@@ -1,4 +1,23 @@
 ---
+- name: ensures kube dir exists
+  file: 
+    path: "/home/vagrant/.kube"
+    state: directory
+
+- name: Install kubectl conf to system
+  become: yes
+  copy: 
+    src: config
+    dest: /etc/kubernetes/admin.conf
+
+- name: Install kubectl config to Vagrant user
+  become: yes
+  copy:
+    src: config
+    dest: /home/vagrant/.kube/config
+    owner: vagrant
+    mode: 0777
+
 - name: Copy join command from Ansiblehost to the worker nodes.
   become: yes
   copy:
@@ -18,4 +37,8 @@
     user: vagrant
     state: present
     job: /usr/local/bin/kubernetes_join_command.sh
+  become: true
+
+- name: Label node as worker node
+  command: kubectl --kubeconfig /home/vagrant/.kube/config label node {{ kubernetes_node_name }} node-role.kubernetes.io/worker=worker
   become: true
